@@ -3,12 +3,17 @@
 #ifndef OD_LEXER_H
 #define OD_LEXER_H
 
+#include <unordered_map>
+#include <vector>
+#include <string>
+
+#include "errors.h"
 
 enum TokenKind {
 
 	// Special Tokens
 	TOKEN_EOF,
-	TOKEN_ERROR
+	TOKEN_ERROR,
 
 	// Binary Operators
 	TOKEN_PLUS,
@@ -35,12 +40,16 @@ enum TokenKind {
 	TOKEN_LEFT_CURLY,
 	TOKEN_RIGHT_CURLY,
 
+	// identifier
+	TOKEN_ID,
+
 	// Data types
 	TOKEN_INT,
 	TOKEN_DOUBLE,
 	TOKEN_STRING,
 	TOKEN_TRUE,
-	TOKEN_FALSE
+	TOKEN_BOOL,
+	TOKEN_FALSE,
 	TOKEN_VOID,
 
 	// Keywords
@@ -55,20 +64,31 @@ enum TokenKind {
 
 struct Token {
 	enum TokenKind tt;
-	int len;
+	size_t len;
 	size_t starts_at;
 	size_t ends_at;
 	int line;
+	std::string content;
+
+	std::string dump();
 };
 
 class Lexer {
 	private:
 		// helpers
-		char advance();
-		char peek();
-		char peek_next();
-		void add_token();
-		void skip_whitespaces();
+		char _advance();
+		char _peek();
+		char _peek_next();
+		void _add_token(enum TokenKind tt);
+		void _skip_whitespaces();
+		void _number();
+		void _string();
+		void _identifier();
+		void _identifier_type();
+		bool _match(char next_char);
+		bool _at_end();
+		void _error(std::string msg);
+		void _scan_token();
 
 		// variables
 		size_t _current_pos;
@@ -77,14 +97,18 @@ class Lexer {
 		size_t _pos_line_current;
 		size_t _pos_line_start;
 		int _line;
+		bool _error_in_lexer;
+
+		std::vector<struct Token> _token_list;
 		std::string _source;
 		std::unordered_map<std::string, enum TokenKind> _token_map;
 
 	public:
 		std::vector<struct Token> lex();
+		std::vector<struct Diagnostic> _diagnostics;
 		Lexer(std::string source);
 
-}
+};
 
 
 #endif
