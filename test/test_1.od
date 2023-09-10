@@ -1,3 +1,12 @@
-func main () : void {
+# Welcome to a demo of the odyssey programming language
+# These lines starting with '#' are comments
 
+func main () : void {    # func starts a function declaration
+	let variable1 : int = 0;
+	let variable2 : string = "HELLO";
+	
+}
+
+func hello_world (arg1 : int, arg2 : string) : void {
+	print arg2;
 }

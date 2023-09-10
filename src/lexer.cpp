@@ -59,6 +59,7 @@ Lexer::Lexer(std::string source) {
 
 	_token_map["func"] = TOKEN_FUNC;
 	_token_map["let"] = TOKEN_LET;
+	_token_map["print"] = TOKEN_PRINT;
 	_token_map["if"] = TOKEN_IF;
 	_token_map["else"] = TOKEN_ELSE;
 	_token_map["elif"] = TOKEN_ELIF;
@@ -70,6 +71,7 @@ Lexer::Lexer(std::string source) {
 	_token_map["bool"] = TOKEN_BOOL;
 	_token_map["true"] = TOKEN_TRUE;
 	_token_map["false"] = TOKEN_FALSE;
+	_token_map["string"] = TOKEN_STRING;
 }
 
 
@@ -261,6 +263,9 @@ void Lexer::_scan_token() {
 		case '}':
 			_add_token(TOKEN_RIGHT_CURLY);
 			break;
+		case ',':
+			_add_token(TOKEN_COMMA);
+			break;
 		case ' ':
 		case '\t':
 		case '\r':
@@ -269,6 +274,9 @@ void Lexer::_scan_token() {
 			_pos_line_start = 0;
 			_pos_line_current = 0;
 			_line++;
+			break;
+		case '#':
+			while(_peek() != '\n' && !_at_end()) _advance();
 			break;
 		default:
 			if(helper::isdigit(c))

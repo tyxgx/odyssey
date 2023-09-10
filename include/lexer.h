@@ -53,6 +53,7 @@ enum TokenKind {
 	TOKEN_VOID,
 
 	// Keywords
+	TOKEN_PRINT,
 	TOKEN_FUNC,
 	TOKEN_FOR,
 	TOKEN_WHILE,
