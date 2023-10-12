@@ -171,7 +171,7 @@ std::unique_ptr<Expr> Parser::_parse_primary_expr() {
 std::unique_ptr<Expr> Parser::_parse_paren_expr() {
 	// _match() consumed the '('
 	// consume the left paren
-	std::cout << _advance().content << std::endl;
+	_advance();
 	auto expr = _expression();
 	/* if(!expr) return nullptr; */
 
