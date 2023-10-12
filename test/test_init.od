@@ -1,0 +1,22 @@
+# Test file
+# These lines starting with '#' are comments
+
+# stray symbol
+# 1 - 1/ 2 + 1
+
+# 1.111 / 2 != (3 * 4)
+# 1.111 / 2 >= (3 * 4)
+# 1.111 / 2 <= (3 * 4)
+# 1.111 / 2 == (3 * 4)
+# 1.111 / 2 != (3 * 4)
+
+
+# "string1" == "string2"
+
+# true == true
+# true != true
+# false != true
+
+# two line expressions
+# multiple parser errors, expected ')'
+(1 - 1 + (

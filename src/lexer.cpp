@@ -1,7 +1,8 @@
 // Lexer
 
-#include "../include/lexer.h"
-#include "../include/errors.h"
+#include "lexer.h"
+#include "errors.h"
+#include <iostream>
 
 namespace helper {
 	bool isdigit(char c) {
@@ -18,8 +19,11 @@ namespace helper {
 }
 
 std::string Token::dump() {
-	std::string _dump = " [line " + std::to_string(line) + "] from col " + std::to_string(starts_at) + " to col " + std::to_string(ends_at) + " ";
-	return _dump;
+	std::string dump = " [line " + std::to_string(line) + "] from col " + std::to_string(starts_at) + " to col " + std::to_string(ends_at) + " ";
+	/* std::string dump_at_eof = " [line " + std::to_string(line - 1) +  "] to the end of source code"; */
+	/* if (tt != TOKEN_EOF) */
+	return dump;
+	/* return dump_at_eof; */
 }
 
 std::vector<struct Token> Lexer::lex() {
@@ -29,11 +33,11 @@ std::vector<struct Token> Lexer::lex() {
 		_scan_token();
 	}
 
-	if(_error_in_lexer) {
-		/* std::string error = "ERROR: " + _token_list.back().dump() + ": " + msg; */ 
-		Error err = Error("error");
-		throw err;
-	}
+	/* if(_error_in_lexer) { */
+	/* 	/1* std::string error = "ERROR: " + _token_list.back().dump() + ": " + msg; *1/ */ 
+	/* 	LexerError err = LexerError("error"); */
+	/* 	throw err; */
+	/* } */
 
 	struct Token tok_eof = {
 		.tt = TOKEN_EOF,
@@ -69,6 +73,7 @@ Lexer::Lexer(std::string source) {
 	_token_map["double"] = TOKEN_DOUBLE;
 	_token_map["void"] = TOKEN_VOID;
 	_token_map["bool"] = TOKEN_BOOL;
+	_token_map["nil"] = TOKEN_NIL;
 	_token_map["true"] = TOKEN_TRUE;
 	_token_map["false"] = TOKEN_FALSE;
 	_token_map["string"] = TOKEN_STRING;
@@ -121,6 +126,9 @@ void Lexer::_skip_whitespaces() {
 				_line++;
 				_advance();
 				break;
+			case '#':
+				while(_peek() != '\n' && !_at_end()) _advance();
+				break;
 			default:
 				return;
 		}
@@ -148,8 +156,8 @@ void Lexer::_string() {
 		_advance();
 		if(_peek() == '\n') {
 			_line++;
-			_pos_line_current = 0;
-			_pos_line_start = 0;
+			/* _pos_line_current = 0; */
+			/* _pos_line_start = 0; */
 		}
 	}
 	if(_at_end()) {
@@ -176,8 +184,13 @@ void Lexer::_identifier_type() {
 }
 
 bool Lexer::_match(char expected) {
+	/* std::cout << "\t" << expected << " " << int(expected == _source[_current_pos]) << std::endl; */
 	if(_at_end()) return false;
-	if(_peek() != expected) return false;
+	if(_source[_current_pos] != expected) {
+		/* if (_source[_current_pos] == ' ') */
+		std::cout << "NO MATCH" << _source[_current_pos] << std::endl;
+		return false;
+	}
 
 	_pos_line_current++;
 	_current_pos++;
@@ -192,7 +205,7 @@ void Lexer::_error(std::string msg) {
 	_error_in_lexer = true;
 
 	if(!_at_end()) {
-		std::string error = "ERROR: [line " + std::to_string(_line) + "] from col " + std::to_string(_pos_line_start + 1) + " to col " + std::to_string(_pos_line_current + 1) + ": " + msg;
+		std::string error = "[line " + std::to_string(_line) + "] from col " + std::to_string(_pos_line_start + 1) + " to col " + std::to_string(_pos_line_current + 1) + ": " + msg;
 		struct Diagnostic diagnostic = {
 			.starts_at = _pos_line_start,
 			.ends_at = _pos_line_current,
@@ -203,7 +216,7 @@ void Lexer::_error(std::string msg) {
 
 	}
 	else {
-		std::string error = "ERROR: at the end of source code: " + msg;
+		std::string error = "[line " + std::to_string(_line) + "] from col " + std::to_string(_pos_line_start + 1) + " till the end of file" + ": " + msg;
 		struct Diagnostic diagnostic = {
 			.starts_at = _pos_line_start,
 			.ends_at = _pos_line_current,
@@ -216,6 +229,7 @@ void Lexer::_error(std::string msg) {
 }
 
 void Lexer::_scan_token() {
+	/* _skip_whitespaces(); */
 	char c = _advance();
 	switch(c) {
 		case '+':
@@ -231,16 +245,16 @@ void Lexer::_scan_token() {
 			_add_token(TOKEN_STAR);
 			break;
 		case '!':
-			_match(TOKEN_EQUAL) ? _add_token(TOKEN_BANG_EQUAL) : _add_token(TOKEN_BANG);
+			_match('=') ? _add_token(TOKEN_BANG_EQUAL) : _add_token(TOKEN_BANG);
 			break;
 		case '=':
-			_match(TOKEN_EQUAL) ? _add_token(TOKEN_EQUAL_EQUAL) : _add_token(TOKEN_EQUAL);
+			_match('=') ? _add_token(TOKEN_EQUAL_EQUAL) : _add_token(TOKEN_EQUAL);
 			break;
 		case '>':
-			_match(TOKEN_EQUAL) ? _add_token(TOKEN_GREATER_EQUAL) : _add_token(TOKEN_GREATER);
+			_match('=') ? _add_token(TOKEN_GREATER_EQUAL) : _add_token(TOKEN_GREATER);
 			break;
 		case '<':
-			_match(TOKEN_EQUAL) ? _add_token(TOKEN_LESS_EQUAL) : _add_token(TOKEN_LESS);
+			_match('=') ? _add_token(TOKEN_LESS_EQUAL) : _add_token(TOKEN_LESS);
 			break;
 		case ':':
 			_add_token(TOKEN_COLON);
@@ -269,11 +283,13 @@ void Lexer::_scan_token() {
 		case ' ':
 		case '\t':
 		case '\r':
+			/* _advance(); */
 			break;
 		case '\n':
 			_pos_line_start = 0;
 			_pos_line_current = 0;
 			_line++;
+			/* _advance(); */
 			break;
 		case '#':
 			while(_peek() != '\n' && !_at_end()) _advance();
@@ -283,10 +299,13 @@ void Lexer::_scan_token() {
 				_number();
 			else if(helper::isalpha(c))
 				_identifier();
-			else
-				_error("Unrecognised token in input");
+			else {
+				std::string err = "Unrecognised token in input: ";
+				if(c == ' ') err += "whitespace";
+				else err += c;
+				_error(err);
+			}
+			break;
 	}
 }
-
-
 

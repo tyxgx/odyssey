@@ -1,7 +1,7 @@
 /// Lexer includes
 
-#ifndef OD_LEXER_H
-#define OD_LEXER_H
+#ifndef __OD_LEXER_H__
+#define __OD_LEXER_H__
 
 #include <unordered_map>
 #include <vector>
@@ -51,6 +51,7 @@ enum TokenKind {
 	TOKEN_BOOL,
 	TOKEN_FALSE,
 	TOKEN_VOID,
+	TOKEN_NIL,
 
 	// Keywords
 	TOKEN_PRINT,
@@ -86,7 +87,7 @@ class Lexer {
 		void _string();
 		void _identifier();
 		void _identifier_type();
-		bool _match(char next_char);
+		bool _match(char expected);
 		bool _at_end();
 		void _error(std::string msg);
 		void _scan_token();
@@ -108,7 +109,6 @@ class Lexer {
 		std::vector<struct Token> lex();
 		std::vector<struct Diagnostic> _diagnostics;
 		Lexer(std::string source);
-
 };
 
 
