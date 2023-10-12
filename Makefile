@@ -1,4 +1,4 @@
-CC = g++
+CC = clang++
 
 CFLAGS = -g -Wall -Wextra -std=c++20 -Wpedantic -Wuninitialized -Wmissing-include-dirs -Wshadow -O2 -Wundef -fsanitize=address
 
