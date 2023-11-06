@@ -188,7 +188,7 @@ bool Lexer::_match(char expected) {
 	if(_at_end()) return false;
 	if(_source[_current_pos] != expected) {
 		/* if (_source[_current_pos] == ' ') */
-		std::cout << "NO MATCH" << _source[_current_pos] << std::endl;
+		/* std::cout << "NO MATCH" << " " <<  _source[_current_pos] << std::endl; */
 		return false;
 	}
 

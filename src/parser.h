@@ -26,13 +26,14 @@ class Parser {
 	std::vector<struct Token> _token_list; //passed in from lexer
 	size_t _current_ptr; // index points to the current position in the list
 	bool _error_occurred;
-	std::unordered_map<enum TokenKind, int> _binop_precedence;
+	std::unordered_map<enum TokenKind, std::pair<std::string, int>> _binop_precedence;
 
 	// Ast builders
 	std::unique_ptr<Expr> _expression();
-	std::unique_ptr<Expr> _parse_primary_expr();
+	std::unique_ptr<Expr> _parse_primary_expr(bool from_binary_expression);
 	std::unique_ptr<Expr> _parse_binary_expr(int min_prec, std::unique_ptr<Expr> LHS);
 	std::unique_ptr<Expr> _parse_paren_expr();
+	std::unique_ptr<Expr> _parse_unary_expr();
 
 	public:
 	std::vector<struct Diagnostic> _diagnostics;

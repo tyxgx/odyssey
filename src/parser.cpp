@@ -1,5 +1,4 @@
 // Parser mixes Recursive descent and precedence climbing
-
 #include <memory>
 #include <string>
 
@@ -7,17 +6,17 @@
 
 //construct
 Parser::Parser(std::vector<struct Token> token_list) {
-	_binop_precedence[TOKEN_EQUAL_EQUAL] = 10;
-	_binop_precedence[TOKEN_BANG_EQUAL] = 10;
-	_binop_precedence[TOKEN_GREATER] = 20;
-	_binop_precedence[TOKEN_GREATER_EQUAL] = 20;
-	_binop_precedence[TOKEN_LESS] = 20;
-	_binop_precedence[TOKEN_LESS_EQUAL] = 20;
-	_binop_precedence[TOKEN_PLUS] = 30;
-	_binop_precedence[TOKEN_MINUS] = 30;
-	_binop_precedence[TOKEN_SLASH] = 40;
-	_binop_precedence[TOKEN_STAR] = 40;
-	_binop_precedence[TOKEN_BANG] = 50; // highest.
+	_binop_precedence[TOKEN_EQUAL_EQUAL] = std::make_pair("left", 10);
+	_binop_precedence[TOKEN_BANG_EQUAL] = std::make_pair("left", 10);
+	_binop_precedence[TOKEN_GREATER] = std::make_pair("left", 20);
+	_binop_precedence[TOKEN_GREATER_EQUAL] = std::make_pair("left", 20);
+	_binop_precedence[TOKEN_LESS] = std::make_pair("left", 20);
+	_binop_precedence[TOKEN_LESS_EQUAL] = std::make_pair("left", 20);
+	_binop_precedence[TOKEN_PLUS] = std::make_pair("left", 30);
+	_binop_precedence[TOKEN_MINUS] = std::make_pair("left", 30);
+	_binop_precedence[TOKEN_SLASH] = std::make_pair("left", 40);
+	_binop_precedence[TOKEN_STAR] = std::make_pair("left", 40);
+	_binop_precedence[TOKEN_BANG] = std::make_pair("left", 50); // highest.
 	_token_list = token_list;
 	_current_ptr = 0;
 	_error_occurred = false;
@@ -59,7 +58,7 @@ bool Parser::_match() {
 }
 
 int Parser::_get_precedence() {
-	int prec = _binop_precedence[_peek().tt];
+	int prec = _binop_precedence[_peek().tt].second;
 	if(prec <= 0) return -1;
 	return prec;
 }
@@ -106,14 +105,41 @@ std::unique_ptr<Expr> Parser::parse() {
 }
 
 std::unique_ptr<Expr> Parser::_expression() {
-	auto LHS = _parse_primary_expr();
+	auto LHS = _parse_primary_expr(false);
 	if(!LHS) return nullptr; // assert?
-
 	// now, parser binary expression
 	return _parse_binary_expr(0 /* The current min precedence */, std::move(LHS));
 }
 
-std::unique_ptr<Expr> Parser::_parse_primary_expr() {
+std::unique_ptr<Expr> Parser::_parse_unary_expr() {
+
+	enum TokenKind tt = _peek().tt;
+	if(tt == TOKEN_MINUS)  {
+		_advance();
+		if(_peek().tt != TOKEN_INT && _peek().tt != TOKEN_DOUBLE && _peek().tt != TOKEN_MINUS) {
+			_report_error("illegal use of unary minus: cannot operate on non-numeric values");
+		}
+
+		enum TokenKind op = _previous().tt;
+		auto RHS = _parse_unary_expr();
+		return std::make_unique<UnaryExpr>(op, std::move(RHS));
+	}
+
+	if(tt == TOKEN_BANG) {
+		_advance();
+		if(_peek().tt == TOKEN_STRING) {
+			_report_error("illegal use of logical not: cannot operate on strings");
+		}
+
+		enum TokenKind op = _previous().tt;
+		auto RHS = _parse_unary_expr();
+		return std::make_unique<UnaryExpr>(op, std::move(RHS));
+	}
+
+	return _parse_primary_expr(false);
+}
+
+std::unique_ptr<Expr> Parser::_parse_primary_expr(bool from_binary_expr) {
 	switch(_peek().tt) {
 		case TOKEN_NIL:
 			{
@@ -152,6 +178,12 @@ std::unique_ptr<Expr> Parser::_parse_primary_expr() {
 				auto expr = _parse_paren_expr();
 				return expr;
 			}
+		case TOKEN_MINUS:
+		case TOKEN_BANG:
+			{
+					auto expr = _parse_unary_expr();
+					return expr;
+			}
 		default:
 			{
 				if(!_at_eof()) {
@@ -160,7 +192,7 @@ std::unique_ptr<Expr> Parser::_parse_primary_expr() {
 					_report_error(report);
 				}
 				else {
-					std::string report = "Unexpected end of file while parsing";
+					std::string report = "unexpected end of file while parsing";
 					_report_error(report);
 				}
 				return nullptr;
@@ -195,10 +227,15 @@ std::unique_ptr<Expr> Parser::_parse_binary_expr(int min_prec, std::unique_ptr<E
 			return LHS;
 
 		enum TokenKind op = _peek().tt;
+		
+		if(op == TOKEN_BANG) {
+			_report_error("illegal use of '!' in binary expression");
+		}
+
 		// consume this operator
 		_advance();
 		// evaluate the expression on the RHS of the operator
-		auto RHS = _parse_primary_expr();
+		auto RHS = _parse_primary_expr(true);
 		if(!RHS) return nullptr;
 
 		int next_token_prec = _get_precedence();

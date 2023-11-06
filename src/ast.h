@@ -21,7 +21,6 @@ class VariableExpr;
 class Expr {
 	public:
 		virtual ~Expr() = default;
-
 };
 
 class IntLiteralExpr : public Expr {
