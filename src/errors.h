@@ -1,5 +1,5 @@
-#ifndef __OD_ERROR_H__
-#define __OD_ERROR_H__
+#ifndef OD_ERROR_H
+#define OD_ERROR_H
 
 #include <memory>
 #include <string>

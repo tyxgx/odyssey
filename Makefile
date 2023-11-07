@@ -7,7 +7,7 @@ TARGET = ody
 all: $(TARGET)
 
 $(TARGET):
-	$(CC) $(CFLAGS) -o $(TARGET).out src/*.cpp
+	$(CC) src/*.cpp `llvm-config --cxxflags --ldflags --system-libs --libs core`  -o $(TARGET).out
 
 clean:
 	$(RM) -f .DS_Store

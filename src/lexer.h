@@ -1,7 +1,7 @@
 /// Lexer includes
 
-#ifndef __OD_LEXER_H__
-#define __OD_LEXER_H__
+#ifndef OD_LEXER_H
+#define OD_LEXER_H
 
 #include <unordered_map>
 #include <vector>

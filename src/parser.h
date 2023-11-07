@@ -1,12 +1,12 @@
-#ifndef __OD_PARSER_H__
-#define __OD_PARSER_H__
+#ifndef OD_PARSER_H
+#define OD_PARSER_H
 
 // Parser includes
 #include <unordered_map>
 #include <vector>
 #include "lexer.h"
-#include "ast.h"
 #include "errors.h"
+#include "ast.h"
 
 class Parser {
 	struct Token _advance();
