@@ -36,9 +36,16 @@ int main(int argc, const char **argv) {
         }
         if (!parser._diagnostics.empty()) exit(1);
 
+        auto code_gen = expr->codegen(visitor);
+        if (visitor.had_error_somewhere) {
+            for (auto diagnostic : visitor.diagnostics_) {
+                diagnostic.print_diagnostic();
+            }
+            exit(1);
+        }
+
         std::error_code err_code;
-        auto fn_type =
-            llvm::FunctionType::get(visitor.Builder->getDoubleTy(), false);
+        auto fn_type = llvm::FunctionType::get(code_gen->getType(), false);
         auto fn = visitor.TheModule->getFunction("main");
 
         if (fn == nullptr) {
@@ -52,7 +59,6 @@ int main(int argc, const char **argv) {
         auto entry =
             llvm::BasicBlock::Create(*(visitor.TheContext), "entry", fn);
         visitor.Builder->SetInsertPoint(entry);
-        auto code_gen = expr->codegen(visitor);
         visitor.Builder->CreateRet(code_gen);
         llvm::raw_fd_ostream out_ll("./out.ll", err_code);
         visitor.TheModule->print(out_ll, nullptr);

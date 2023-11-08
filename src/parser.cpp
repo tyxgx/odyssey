@@ -122,8 +122,8 @@ std::unique_ptr<Expr> Parser::_parse_unary_expr() {
     enum TokenKind op = _previous().tt;
     std::unique_ptr<Expr> RHS;
     if ((RHS = _parse_unary_expr()) != nullptr) {
-        std::cout << "SUCCESS\n";
-        return std::make_unique<UnaryExpr>(op, std::move(RHS));
+        return std::make_unique<UnaryExpr>(op, std::move(RHS),
+                                           _previous().line);
     } else {
         std::cout << "NULLPTR";
     }
@@ -140,27 +140,27 @@ std::unique_ptr<Expr> Parser::_parse_primary_expr(bool from_binary_expr) {
         /* 	} */
         case TOKEN_TRUE: {
             _advance();
-            return std::make_unique<BoolLiteralExpr>(true);
+            return std::make_unique<BoolLiteralExpr>(true, _previous().line);
         }
         case TOKEN_FALSE: {
             _advance();
-            return std::make_unique<BoolLiteralExpr>(false);
+            return std::make_unique<BoolLiteralExpr>(false, _previous().line);
         }
         case TOKEN_INT: {
             _advance();
             return std::make_unique<IntLiteralExpr>(
-                std::stoi(_previous().content));
+                std::stoi(_previous().content), _previous().line);
         }
         case TOKEN_DOUBLE: {
             _advance();
             return std::make_unique<DoubleLiteralExpr>(
-                std::stod(_previous().content));
+                std::stod(_previous().content), _previous().line);
         }
         case TOKEN_STRING: {
             _advance();
             size_t len = _previous().len;
             std::string value = _previous().content.substr(1, len - 2);
-            return std::make_unique<StringLiteralExpr>(value);
+            return std::make_unique<StringLiteralExpr>(value, _previous().line);
         }
         case TOKEN_LEFT_PAREN: {
             auto expr = _parse_paren_expr();
@@ -186,7 +186,6 @@ std::unique_ptr<Expr> Parser::_parse_paren_expr() {
     // consume the left paren
     _advance();
     auto expr = _expression();
-    std::cout << "PAREN PARSED" << std::endl;
     if (!expr) {
         std::cout << "ERROR\n";
     }
@@ -230,6 +229,7 @@ std::unique_ptr<Expr> Parser::_parse_binary_expr(int min_prec,
         }
 
         // merge
-        LHS = std::make_unique<BinaryExpr>(op, std::move(LHS), std::move(RHS));
+        LHS = std::make_unique<BinaryExpr>(op, std::move(LHS), std::move(RHS),
+                                           _previous().line);
     }
 }

@@ -13,6 +13,8 @@
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "errors.h"
+
 #include <map>
 
 // Forward declare
@@ -37,6 +39,10 @@ class CodeVisitor {
 		llvm::Value *VisitBoolLiteral(BoolLiteralExpr &);
 		llvm::Value *VisitUnaryExpr(UnaryExpr &);
 		llvm::Value *VisitBinaryExpr(BinaryExpr &);
+
+		std::vector<struct Diagnostic> diagnostics_;
+		void report_error_(std::string message, int line);
+		bool had_error_somewhere;
 };
 
 #endif

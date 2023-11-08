@@ -16,7 +16,4 @@
 # true == true
 # true != true
 # false != true
-
-# two line expressions
-# multiple parser errors, expected ')' 
-1.0 + 1.0/2.0
+1 + 1
