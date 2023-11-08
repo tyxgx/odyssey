@@ -36,14 +36,26 @@ int main(int argc, const char **argv) {
         }
         if (!parser._diagnostics.empty()) exit(1);
 
+        std::error_code err_code;
+        auto fn_type =
+            llvm::FunctionType::get(visitor.Builder->getDoubleTy(), false);
+        auto fn = visitor.TheModule->getFunction("main");
+
+        if (fn == nullptr) {
+            // create the function
+            fn =
+                llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage,
+                                       "main", *(visitor.TheModule));
+            verifyFunction(*fn);
+        }
+
+        auto entry =
+            llvm::BasicBlock::Create(*(visitor.TheContext), "entry", fn);
+        visitor.Builder->SetInsertPoint(entry);
         auto code_gen = expr->codegen(visitor);
-        code_gen->print(llvm::errs());
-
-        if (llvm::verifyModule(*visitor.TheModule))
-            llvm::errs() << *visitor.TheModule;
-
-        std::cout << std::endl;
-        visitor.TheModule->print(llvm::errs(), nullptr);
+        visitor.Builder->CreateRet(code_gen);
+        llvm::raw_fd_ostream out_ll("./out.ll", err_code);
+        visitor.TheModule->print(out_ll, nullptr);
 
     } else {
         std::cout << "Usage: ./ody <source_file>" << std::endl;

@@ -39,7 +39,8 @@ llvm::Value *CodeVisitor::VisitBoolLiteral(BoolLiteralExpr &ast_node) {
 llvm::Value *CodeVisitor::VisitUnaryExpr(UnaryExpr &ast_node) {
     llvm::Value *rhs = ast_node.RHS->codegen(*this);
     if (ast_node.Operator == TOKEN_MINUS) {
-        return Builder->CreateNeg(rhs);
+        return Builder->CreateFSub(
+            llvm::ConstantFP::get(*TheContext, llvm::APFloat(0.0)), rhs);
     }
     return rhs;
 }
