@@ -53,7 +53,8 @@ llvm::Value *CodeVisitor::VisitUnaryExpr(UnaryExpr &ast_node) {
     } else if (type_rhs->isDoubleTy() || type_rhs->isIntegerTy()) {
         return rhs;
     }
-    report_error_("illegal operand for unary minus", ast_node.Line);
+    report_error_("illegal operand for unary minus", ast_node.Line,
+                  ast_node.StartsAt, ast_node.EndsAt);
     return nullptr;
 }
 
@@ -63,7 +64,7 @@ llvm::Value *CodeVisitor::VisitBinaryExpr(BinaryExpr &ast_node) {
     if (!lhs_val || !rhs_val)
         report_error_(
             "could not resolve left and right hand sides in binary expression",
-            ast_node.Line);
+            ast_node.Line, ast_node.StartsAt, ast_node.EndsAt);
 
     auto type_lhs = lhs_val->getType();
     auto type_rhs = rhs_val->getType();
@@ -72,7 +73,7 @@ llvm::Value *CodeVisitor::VisitBinaryExpr(BinaryExpr &ast_node) {
         report_error_(
             "arguments of different types provided to binary expression; "
             "implicit casts not allowed",
-            ast_node.Line);
+            ast_node.Line, ast_node.StartsAt, ast_node.EndsAt);
     }
 
     if (type_lhs->isDoubleTy()) {
@@ -116,13 +117,16 @@ llvm::Value *CodeVisitor::VisitBinaryExpr(BinaryExpr &ast_node) {
     } else {
         report_error_(
             "non-numerical operands not allowed in binary expressions",
-            ast_node.Line);
+            ast_node.Line, ast_node.StartsAt, ast_node.EndsAt);
     }
     return nullptr;
 }
 
-void CodeVisitor::report_error_(std::string message, int line) {
-    std::string error = "[line " + std::to_string(line) + "]: " + message;
+void CodeVisitor::report_error_(std::string message, int line, size_t starts_at,
+                                size_t ends_at) {
+    std::string error = "[line " + std::to_string(line) + "] from col " +
+                        std::to_string(starts_at) + " to col " +
+                        std::to_string(ends_at) + ": " + message;
     struct Diagnostic diagnostic = {
         .starts_at = 24,
         .ends_at = 24,

@@ -41,7 +41,7 @@ class CodeVisitor {
 		llvm::Value *VisitBinaryExpr(BinaryExpr &);
 
 		std::vector<struct Diagnostic> diagnostics_;
-		void report_error_(std::string message, int line);
+		void report_error_(std::string message, int line, size_t starts_at, size_t ends_at);
 		bool had_error_somewhere;
 };
 

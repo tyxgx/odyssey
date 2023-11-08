@@ -28,9 +28,7 @@ int main(int argc, const char **argv) {
         Parser parser = Parser(tokens);
         auto expr = parser.parse();
         CodeVisitor visitor;
-        if (!expr) {
-            std::cout << "Parser returned NULL" << std::endl;
-        }
+
         for (auto diagnostic : parser._diagnostics) {
             diagnostic.print_diagnostic();
         }

@@ -29,7 +29,8 @@ class IntLiteralExpr : public Expr {
 	public:
 		int Content;
 		int Line;
-		IntLiteralExpr(int content, int line) : Content(content), Line(line) {};
+		size_t StartsAt, EndsAt;
+		IntLiteralExpr(int content,  int line, size_t starts_at, size_t ends_at) : Content(content), Line(line), StartsAt(starts_at), EndsAt(ends_at) {};
 		llvm::Value *codegen(CodeVisitor &) override;
 };
 
@@ -37,7 +38,8 @@ class DoubleLiteralExpr : public Expr {
 	public:
 		double Content;
 		int Line;
-		DoubleLiteralExpr(double content, int line) : Content(content), Line(line) {};
+		size_t StartsAt, EndsAt;
+		DoubleLiteralExpr(double content,  int line, size_t starts_at, size_t ends_at) : Content(content), Line(line), StartsAt(starts_at), EndsAt(ends_at) {};
 		llvm::Value *codegen(CodeVisitor &) override;
 };
 
@@ -45,7 +47,8 @@ class StringLiteralExpr : public Expr {
 	public:
 		std::string Content;
 		int Line;
-		StringLiteralExpr(std::string content, int line) : Content(content), Line(line) {};
+		size_t StartsAt, EndsAt;
+		StringLiteralExpr(std::string content,  int line, size_t starts_at, size_t ends_at) : Content(content), Line(line), StartsAt(starts_at), EndsAt(ends_at) {};
 		llvm::Value *codegen(CodeVisitor &) override;
 };
 
@@ -53,7 +56,8 @@ class BoolLiteralExpr : public Expr {
 	public:
 		bool Content;
 		int Line;
-		BoolLiteralExpr(bool content, int line) : Content(content), Line(line) {};
+		size_t StartsAt, EndsAt;
+		BoolLiteralExpr(bool content,  int line, size_t starts_at, size_t ends_at) : Content(content), Line(line), StartsAt(starts_at), EndsAt(ends_at) {};
 		llvm::Value *codegen(CodeVisitor &) override;
 };
 
@@ -62,7 +66,8 @@ class UnaryExpr : public Expr {
 		enum TokenKind Operator;
 		std::unique_ptr<Expr> RHS;
 		int Line;
-		UnaryExpr(enum TokenKind op, std::unique_ptr<Expr> rhs, int line) : Operator(op), RHS(std::move(rhs)), Line(line) {};
+		size_t StartsAt, EndsAt;
+		UnaryExpr(enum TokenKind op, std::unique_ptr<Expr> rhs, int line, size_t starts_at, size_t ends_at) : Operator(op), RHS(std::move(rhs)), Line(line), StartsAt(starts_at), EndsAt(ends_at) {};
 		llvm::Value *codegen(CodeVisitor &) override;
 };
 
@@ -71,7 +76,8 @@ class BinaryExpr : public Expr {
 		enum TokenKind Operator;
 		std::unique_ptr<Expr> LHS, RHS;
 		int Line;
-		BinaryExpr(enum TokenKind op, std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs, int line) : Operator(op), LHS(std::move(lhs)), RHS(std::move(rhs)), Line(line) {};
+		size_t StartsAt, EndsAt;
+		BinaryExpr(enum TokenKind op, std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs, int line, size_t starts_at, size_t ends_at) : Operator(op), LHS(std::move(lhs)), RHS(std::move(rhs)), Line(line), StartsAt(starts_at), EndsAt(ends_at) {};
 		llvm::Value *codegen(CodeVisitor &) override;
 };
 

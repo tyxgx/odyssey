@@ -20,6 +20,7 @@ Parser::Parser(std::vector<struct Token> token_list) {
     _binop_precedence[TOKEN_SLASH] = std::make_pair("left", 40);
     _binop_precedence[TOKEN_STAR] = std::make_pair("left", 40);
     _binop_precedence[TOKEN_BANG] = std::make_pair("left", 50);  // highest.
+    _binop_precedence[TOKEN_RIGHT_PAREN] = std::make_pair("none", 1);  // dummy
     _token_list = token_list;
     _current_ptr = 0;
     _error_occurred = false;
@@ -96,17 +97,13 @@ void Parser::_report_error(std::string msg) {
 std::unique_ptr<Expr> Parser::parse() {
     std::unique_ptr<Expr> expression = _expression();
 
-    /* if(_error_occurred) { */
-    /* 	ParserError err = ParserError("Parser Error"); */
-    /* 	throw err; */
-    /* } */
     return expression;
 }
 
 std::unique_ptr<Expr> Parser::_expression() {
     auto LHS = _parse_unary_expr();
     if (!LHS) return nullptr;  // assert?
-    // now, parser binary expression
+    // now, parse binary expression
     return _parse_binary_expr(0 /* The current min precedence */,
                               std::move(LHS));
 }
@@ -120,12 +117,11 @@ std::unique_ptr<Expr> Parser::_parse_unary_expr() {
 
     _advance();
     enum TokenKind op = _previous().tt;
-    std::unique_ptr<Expr> RHS;
-    if ((RHS = _parse_unary_expr()) != nullptr) {
-        return std::make_unique<UnaryExpr>(op, std::move(RHS),
-                                           _previous().line);
-    } else {
-        std::cout << "NULLPTR";
+
+    if (auto RHS = _parse_unary_expr()) {
+        return std::make_unique<UnaryExpr>(op, std::move(RHS), _previous().line,
+                                           _previous().starts_at,
+                                           _previous().ends_at);
     }
     return nullptr;
     /* return _parse_primary_expr(false); */
@@ -140,32 +136,41 @@ std::unique_ptr<Expr> Parser::_parse_primary_expr(bool from_binary_expr) {
         /* 	} */
         case TOKEN_TRUE: {
             _advance();
-            return std::make_unique<BoolLiteralExpr>(true, _previous().line);
+            return std::make_unique<BoolLiteralExpr>(true, _previous().line,
+                                                     _previous().starts_at,
+                                                     _previous().ends_at);
         }
         case TOKEN_FALSE: {
             _advance();
-            return std::make_unique<BoolLiteralExpr>(false, _previous().line);
+            return std::make_unique<BoolLiteralExpr>(false, _previous().line,
+                                                     _previous().starts_at,
+                                                     _previous().ends_at);
         }
         case TOKEN_INT: {
             _advance();
             return std::make_unique<IntLiteralExpr>(
-                std::stoi(_previous().content), _previous().line);
+                std::stoi(_previous().content), _previous().line,
+                _previous().starts_at, _previous().ends_at);
         }
         case TOKEN_DOUBLE: {
             _advance();
             return std::make_unique<DoubleLiteralExpr>(
-                std::stod(_previous().content), _previous().line);
+                std::stod(_previous().content), _previous().line,
+                _previous().starts_at, _previous().ends_at);
         }
         case TOKEN_STRING: {
             _advance();
             size_t len = _previous().len;
             std::string value = _previous().content.substr(1, len - 2);
-            return std::make_unique<StringLiteralExpr>(value, _previous().line);
+            return std::make_unique<StringLiteralExpr>(value, _previous().line,
+                                                       _previous().starts_at,
+                                                       _previous().ends_at);
         }
         case TOKEN_LEFT_PAREN: {
             auto expr = _parse_paren_expr();
             return expr;
         }
+
         default: {
             if (!_at_eof()) {
                 std::string report =
@@ -205,13 +210,16 @@ std::unique_ptr<Expr> Parser::_parse_binary_expr(int min_prec,
 
     while (true) {
         int current_token_prec = _get_precedence();
-
         if (current_token_prec < min_prec) return LHS;
 
         enum TokenKind op = _peek().tt;
 
         if (op == TOKEN_BANG) {
-            _report_error("illegal use of '!' in binary expression");
+            _report_error("illegal use of '!' in expression");
+        }
+
+        if (op == TOKEN_RIGHT_PAREN) {
+            _report_error("unmatched ')'");
         }
 
         // consume this operator
@@ -229,7 +237,8 @@ std::unique_ptr<Expr> Parser::_parse_binary_expr(int min_prec,
         }
 
         // merge
-        LHS = std::make_unique<BinaryExpr>(op, std::move(LHS), std::move(RHS),
-                                           _previous().line);
+        LHS = std::make_unique<BinaryExpr>(
+            op, std::move(LHS), std::move(RHS), _previous().line,
+            _previous().starts_at, _previous().ends_at);
     }
 }
