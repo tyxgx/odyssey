@@ -122,6 +122,15 @@ llvm::Value *CodeVisitor::VisitBinaryExpr(BinaryExpr &ast_node) {
     return nullptr;
 }
 
+/* llvm::Value *CodeVisitor::VisitStmt(Stmt &ast_node) { */
+/*     auto expr = ast_node.Expression->codegen(*this); */
+/*     if(!expr) { */
+/*         report_error_("illegal expression", ast_node.Line, ast_node.StartsAt, ast_node.EndsAt); */
+/*         return nullptr; */
+/*     } */
+/*     return expr; */
+/* } */
+
 void CodeVisitor::report_error_(std::string message, int line, size_t starts_at,
                                 size_t ends_at) {
     std::string error = "[line " + std::to_string(line) + "] from col " +

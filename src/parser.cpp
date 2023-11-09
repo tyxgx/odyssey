@@ -20,7 +20,8 @@ Parser::Parser(std::vector<struct Token> token_list) {
     _binop_precedence[TOKEN_SLASH] = std::make_pair("left", 40);
     _binop_precedence[TOKEN_STAR] = std::make_pair("left", 40);
     _binop_precedence[TOKEN_BANG] = std::make_pair("left", 50);  // highest.
-    _binop_precedence[TOKEN_RIGHT_PAREN] = std::make_pair("none", 1);  // dummy
+    /* _binop_precedence[TOKEN_RIGHT_PAREN] = std::make_pair("none", 1);  // dummy */
+    /* _binop_precedence[TOKEN_LEFT_PAREN] = std::make_pair("none", 1);  // dummy */
     _token_list = token_list;
     _current_ptr = 0;
     _error_occurred = false;
@@ -94,10 +95,23 @@ void Parser::_report_error(std::string msg) {
 }
 
 // Parser functions
-std::unique_ptr<Expr> Parser::parse() {
-    std::unique_ptr<Expr> expression = _expression();
+std::vector<std::unique_ptr<Stmt>> Parser::parse() {
+    std::vector<std::unique_ptr<Stmt>> stmts;
+    std::unique_ptr<Stmt> s;
+    while((s = _parse_statement()) != nullptr && ! _at_eof()) {}
+        stmts.push_back(std::move(s));
 
-    return expression;
+    return stmts;
+}
+
+std::unique_ptr<Stmt> Parser::_parse_statement() {
+    auto expression = _expression();
+
+    if(!expression)
+        return nullptr;
+
+    _consume(TOKEN_SEMICOLON, "expect ';' to end expression");
+    return std::make_unique<Stmt>(std::move(expression), _previous().line, _previous().starts_at, _previous().ends_at);
 }
 
 std::unique_ptr<Expr> Parser::_expression() {
@@ -111,9 +125,14 @@ std::unique_ptr<Expr> Parser::_expression() {
 std::unique_ptr<Expr> Parser::_parse_unary_expr() {
     enum TokenKind tt = _peek().tt;
     if ((tt != TOKEN_PLUS && tt != TOKEN_MINUS && tt != TOKEN_STAR &&
-         tt != TOKEN_SLASH && tt != TOKEN_LESS) ||
+         tt != TOKEN_SLASH && tt != TOKEN_LESS && tt != TOKEN_SEMICOLON && tt != TOKEN_RIGHT_PAREN) ||
         tt == TOKEN_LEFT_PAREN || tt == TOKEN_COMMA)
         return _parse_primary_expr(false);
+
+    if(tt == TOKEN_RIGHT_PAREN) {
+        _report_error("stray ')' in source");
+        return nullptr;
+    }
 
     _advance();
     enum TokenKind op = _previous().tt;
@@ -170,15 +189,17 @@ std::unique_ptr<Expr> Parser::_parse_primary_expr(bool from_binary_expr) {
             auto expr = _parse_paren_expr();
             return expr;
         }
-
+        case TOKEN_RIGHT_PAREN:
+            return nullptr;
         default: {
             if (!_at_eof()) {
                 std::string report =
-                    "stray symbol in source '" + _peek().content;
+                    "unexpected symbol '" + _peek().content;
                 report += '\'';
+                report += ", expected expression";
                 _report_error(report);
             } else {
-                std::string report = "encountered unexpected EOF";
+                std::string report = "unexpected symbol \'" + _previous().content + "\', expected expression";
                 _report_error(report);
             }
             return nullptr;
@@ -190,12 +211,16 @@ std::unique_ptr<Expr> Parser::_parse_paren_expr() {
     // _match() consumed the '('
     // consume the left paren
     _advance();
+    std::cout << "PAREN\n";
     auto expr = _expression();
-    if (!expr) {
-        std::cout << "ERROR\n";
-    }
 
     _consume(TOKEN_RIGHT_PAREN, "expect ')' after expression.");
+
+    if (!expr) {
+        _report_error("expected expression inside parentheses");
+        return nullptr;
+    }
+
     return expr;
 }
 
@@ -218,9 +243,10 @@ std::unique_ptr<Expr> Parser::_parse_binary_expr(int min_prec,
             _report_error("illegal use of '!' in expression");
         }
 
-        if (op == TOKEN_RIGHT_PAREN) {
-            _report_error("unmatched ')'");
-        }
+        /* if (op == TOKEN_RIGHT_PAREN) { */
+        /*     _report_error("unmatched ')'"); */
+        /*     return nullptr; */
+        /* } */
 
         // consume this operator
         _advance();

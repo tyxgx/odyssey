@@ -34,10 +34,11 @@ class Parser {
 	std::unique_ptr<Expr> _parse_binary_expr(int min_prec, std::unique_ptr<Expr> LHS);
 	std::unique_ptr<Expr> _parse_paren_expr();
 	std::unique_ptr<Expr> _parse_unary_expr();
+	std::unique_ptr<Stmt> _parse_statement();
 
 	public:
 	std::vector<struct Diagnostic> _diagnostics;
-	std::unique_ptr<Expr> parse();
+	std::vector<std::unique_ptr<Stmt>> parse();
 	Parser(std::vector<struct Token> token_list);
 };
 

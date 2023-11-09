@@ -88,4 +88,14 @@ class GroupingExpr : public Expr {
 	GroupingExpr(std::unique_ptr<Expr> exp) : Exp(std::move(exp)) {};
 };
 
+class Stmt {
+	public:
+		virtual ~Stmt() = default;
+		std::unique_ptr<Expr> Expression;
+		int Line;
+		size_t StartsAt, EndsAt;
+		Stmt(std::unique_ptr<Expr> expression, int line, size_t starts_at, size_t ends_at) : Expression(std::move(expression)), Line(line), StartsAt(starts_at), EndsAt(starts_at) {};
+};
+
+
 #endif

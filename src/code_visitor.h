@@ -24,6 +24,8 @@ class BoolLiteralExpr;
 class DoubleLiteralExpr;
 class UnaryExpr;
 class BinaryExpr;
+class Stmt;
+class Stmt;
 
 class CodeVisitor {
 	public:
@@ -39,6 +41,7 @@ class CodeVisitor {
 		llvm::Value *VisitBoolLiteral(BoolLiteralExpr &);
 		llvm::Value *VisitUnaryExpr(UnaryExpr &);
 		llvm::Value *VisitBinaryExpr(BinaryExpr &);
+		/* llvm::Value *VisitStmt(Stmt &); */
 
 		std::vector<struct Diagnostic> diagnostics_;
 		void report_error_(std::string message, int line, size_t starts_at, size_t ends_at);

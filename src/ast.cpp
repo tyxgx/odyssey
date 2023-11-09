@@ -23,3 +23,8 @@ llvm::Value *StringLiteralExpr::codegen(CodeVisitor &visitor) {
 llvm::Value *UnaryExpr::codegen(CodeVisitor &visitor) {
     return visitor.VisitUnaryExpr(const_cast<UnaryExpr &>(*this));
 }
+
+/* llvm::Value *Stmt::codegen(CodeVisitor &visitor) { */
+/*     return visitor.VisitStmt((Stmt &)(*this)); */
+/* } */
+

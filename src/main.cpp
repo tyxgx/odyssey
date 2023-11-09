@@ -26,7 +26,7 @@ int main(int argc, const char **argv) {
 #endif
 
         Parser parser = Parser(tokens);
-        auto expr = parser.parse();
+        auto program = parser.parse();
         CodeVisitor visitor;
 
         for (auto diagnostic : parser._diagnostics) {
@@ -34,7 +34,17 @@ int main(int argc, const char **argv) {
         }
         if (!parser._diagnostics.empty()) exit(1);
 
-        auto code_gen = expr->codegen(visitor);
+        std::string code;
+
+        llvm::raw_string_ostream code_stream(code);
+        /* std::error_code err_code; */
+        /* llvm::raw_fd_ostream out_ll("./out.ll", err_code); */
+        for(auto &stmt: program) {
+            auto codegen = stmt->Expression->codegen(visitor);
+            code_stream << *codegen;
+            code_stream.flush();
+        }
+
         if (visitor.had_error_somewhere) {
             for (auto diagnostic : visitor.diagnostics_) {
                 diagnostic.print_diagnostic();
@@ -42,25 +52,27 @@ int main(int argc, const char **argv) {
             exit(1);
         }
 
-        std::error_code err_code;
-        auto fn_type = llvm::FunctionType::get(code_gen->getType(), false);
+        auto fn_type = llvm::FunctionType::get(visitor.Builder->getInt32Ty(), false);
         auto fn = visitor.TheModule->getFunction("main");
 
         if (fn == nullptr) {
             // create the function
             fn =
                 llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage,
-                                       "main", *(visitor.TheModule));
+                        "main", *(visitor.TheModule));
             verifyFunction(*fn);
         }
 
         auto entry =
             llvm::BasicBlock::Create(*(visitor.TheContext), "entry", fn);
         visitor.Builder->SetInsertPoint(entry);
-        visitor.Builder->CreateRet(code_gen);
-        llvm::raw_fd_ostream out_ll("./out.ll", err_code);
-        visitor.TheModule->print(out_ll, nullptr);
+        visitor.Builder->CreateRet(visitor.Builder->getInt32(0));
 
+        code_stream << *visitor.TheModule;
+        code_stream.flush();
+        std::cout << code << std::endl;
+        /* visitor.TheModule->print(out_ll, nullptr); */
+        /* out_ll.close(); */
     } else {
         std::cout << "Usage: ./ody <source_file>" << std::endl;
     }
