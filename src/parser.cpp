@@ -20,8 +20,10 @@ Parser::Parser(std::vector<struct Token> token_list) {
     _binop_precedence[TOKEN_SLASH] = std::make_pair("left", 40);
     _binop_precedence[TOKEN_STAR] = std::make_pair("left", 40);
     _binop_precedence[TOKEN_BANG] = std::make_pair("left", 50);  // highest.
-    /* _binop_precedence[TOKEN_RIGHT_PAREN] = std::make_pair("none", 1);  // dummy */
-    /* _binop_precedence[TOKEN_LEFT_PAREN] = std::make_pair("none", 1);  // dummy */
+    /* _binop_precedence[TOKEN_RIGHT_PAREN] = std::make_pair("none", 1);  //
+     * dummy */
+    /* _binop_precedence[TOKEN_LEFT_PAREN] = std::make_pair("none", 1);  //
+     * dummy */
     _token_list = token_list;
     _current_ptr = 0;
     _error_occurred = false;
@@ -82,7 +84,7 @@ void Parser::_report_error(std::string msg) {
     if (_at_eof())
         report = " at the end of source code: " + msg;
     else
-        report = _peek().dump() + ": " + msg;
+        report = _peek().dump() + "\b: " + msg;
     _error_occurred = true;
 
     struct Diagnostic diagnostic = {
@@ -98,20 +100,49 @@ void Parser::_report_error(std::string msg) {
 std::vector<std::unique_ptr<Stmt>> Parser::parse() {
     std::vector<std::unique_ptr<Stmt>> stmts;
     std::unique_ptr<Stmt> s;
-    while((s = _parse_statement()) != nullptr && ! _at_eof()) {}
-        stmts.push_back(std::move(s));
+    while ((s = _parse_declaration()) != nullptr && !_at_eof()) {
+    }
+    stmts.push_back(std::move(s));
 
     return stmts;
+}
+
+std::unique_ptr<Stmt> Parser::_parse_declaration() {
+    if (_peek().tt == TOKEN_LET) return _parse_var_decl();
+
+    _report_error("unbound expression");
+    return nullptr;
+    /* return _parse_statement(); */
+}
+
+// variable_decl = "let" ID ('=' expression)? ';';
+std::unique_ptr<Stmt> Parser::_parse_var_decl() {
+    size_t start = _peek().starts_at;
+    // consume the let
+    _advance();
+    // consume the variable's name
+    std::string identifier = _consume(TOKEN_ID,
+             "expected an identifier representing the name of the variable").content;
+    std::unique_ptr<Stmt> expr = nullptr;
+    if (_match<TOKEN_EQUAL>()) {
+        expr = _parse_statement();
+        if (!expr) {
+            _report_error("expected expression following '=' after variable name");
+            return nullptr;
+        }
+    }
+    // doesn't matter if you std::move a nullptr
+    return std::make_unique<VariableStmt>(identifier, std::move(expr), _previous().line, start, _previous().ends_at);
 }
 
 std::unique_ptr<Stmt> Parser::_parse_statement() {
     auto expression = _expression();
 
-    if(!expression)
-        return nullptr;
+    if (!expression) return nullptr;
 
-    _consume(TOKEN_SEMICOLON, "expect ';' to end expression");
-    return std::make_unique<Stmt>(std::move(expression), _previous().line, _previous().starts_at, _previous().ends_at);
+    _consume(TOKEN_SEMICOLON, "expect ';' to terminate expression");
+    return std::make_unique<Expression>(std::move(expression), _previous().line,
+                                  _previous().starts_at, _previous().ends_at);
 }
 
 std::unique_ptr<Expr> Parser::_expression() {
@@ -125,11 +156,12 @@ std::unique_ptr<Expr> Parser::_expression() {
 std::unique_ptr<Expr> Parser::_parse_unary_expr() {
     enum TokenKind tt = _peek().tt;
     if ((tt != TOKEN_PLUS && tt != TOKEN_MINUS && tt != TOKEN_STAR &&
-         tt != TOKEN_SLASH && tt != TOKEN_LESS && tt != TOKEN_SEMICOLON && tt != TOKEN_RIGHT_PAREN) ||
+         tt != TOKEN_SLASH && tt != TOKEN_LESS && tt != TOKEN_SEMICOLON &&
+         tt != TOKEN_RIGHT_PAREN) ||
         tt == TOKEN_LEFT_PAREN || tt == TOKEN_COMMA)
         return _parse_primary_expr(false);
 
-    if(tt == TOKEN_RIGHT_PAREN) {
+    if (tt == TOKEN_RIGHT_PAREN) {
         _report_error("stray ')' in source");
         return nullptr;
     }
@@ -148,11 +180,10 @@ std::unique_ptr<Expr> Parser::_parse_unary_expr() {
 
 std::unique_ptr<Expr> Parser::_parse_primary_expr(bool from_binary_expr) {
     switch (_peek().tt) {
-        /* case TOKEN_NIL: */
-        /* 	{ */
-        /* 		_advance(); */
-        /* 		return std::make_unique<NilLiteralExpr>(TOKEN_NIL); */
-        /* 	} */
+        /* case TOKEN_NIL: { */
+        /*     _advance(); */
+        /*     return std::make_unique<NilLiteralExpr>(); */
+        /* } */
         case TOKEN_TRUE: {
             _advance();
             return std::make_unique<BoolLiteralExpr>(true, _previous().line,
@@ -191,15 +222,18 @@ std::unique_ptr<Expr> Parser::_parse_primary_expr(bool from_binary_expr) {
         }
         case TOKEN_RIGHT_PAREN:
             return nullptr;
+        case TOKEN_ID:
+            return std::make_unique<VariableExpr>(_previous().content, _previous().line, _previous().starts_at, _previous().ends_at);
         default: {
             if (!_at_eof()) {
-                std::string report =
-                    "unexpected symbol '" + _peek().content;
+                std::string report = "unexpected symbol '" + _peek().content;
                 report += '\'';
                 report += ", expected expression";
                 _report_error(report);
             } else {
-                std::string report = "unexpected symbol \'" + _previous().content + "\', expected expression";
+                std::string report = "unexpected symbol \'" +
+                                     _previous().content +
+                                     "\', expected expression";
                 _report_error(report);
             }
             return nullptr;
@@ -232,7 +266,6 @@ std::unique_ptr<Expr> Parser::_parse_binary_expr(int min_prec,
     // return the expression wrapped in a ptr. otherwise, if next operator
     // has same precedence, loop to it. If it has a greater precedence,
     // recurse and make the current RHS the LHS for that operator
-
     while (true) {
         int current_token_prec = _get_precedence();
         if (current_token_prec < min_prec) return LHS;
@@ -242,11 +275,6 @@ std::unique_ptr<Expr> Parser::_parse_binary_expr(int min_prec,
         if (op == TOKEN_BANG) {
             _report_error("illegal use of '!' in expression");
         }
-
-        /* if (op == TOKEN_RIGHT_PAREN) { */
-        /*     _report_error("unmatched ')'"); */
-        /*     return nullptr; */
-        /* } */
 
         // consume this operator
         _advance();

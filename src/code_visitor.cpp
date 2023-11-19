@@ -38,6 +38,10 @@ llvm::Value *CodeVisitor::VisitBoolLiteral(BoolLiteralExpr &ast_node) {
     return llvm::ConstantInt::getBool(*TheContext, ast_node.Content);
 }
 
+/* llvm::Value *CodeVisitor::VisitNilLiteral(BoolLiteralExpr &ast_node) { */
+/*     return llvm::ConstantInt::getBool(*TheContext, ast_node.Content); */
+/* } */
+
 llvm::Value *CodeVisitor::VisitUnaryExpr(UnaryExpr &ast_node) {
     llvm::Value *rhs = ast_node.RHS->codegen(*this);
     auto type_rhs = rhs->getType();
@@ -56,6 +60,14 @@ llvm::Value *CodeVisitor::VisitUnaryExpr(UnaryExpr &ast_node) {
     report_error_("illegal operand for unary minus", ast_node.Line,
                   ast_node.StartsAt, ast_node.EndsAt);
     return nullptr;
+}
+
+llvm::Value* CodeVisitor::VisitVariableExpr(VariableExpr &ast_node) {
+    auto value = NamedValues[ast_node.Name];
+    if(!value) {
+        report_error_("variable not given a value, but used in expression", ast_node.Line, ast_node.StartsAt, ast_node.EndsAt);
+    }
+    return value;
 }
 
 llvm::Value *CodeVisitor::VisitBinaryExpr(BinaryExpr &ast_node) {
@@ -122,14 +134,24 @@ llvm::Value *CodeVisitor::VisitBinaryExpr(BinaryExpr &ast_node) {
     return nullptr;
 }
 
-/* llvm::Value *CodeVisitor::VisitStmt(Stmt &ast_node) { */
-/*     auto expr = ast_node.Expression->codegen(*this); */
-/*     if(!expr) { */
-/*         report_error_("illegal expression", ast_node.Line, ast_node.StartsAt, ast_node.EndsAt); */
-/*         return nullptr; */
-/*     } */
-/*     return expr; */
-/* } */
+llvm::Value *CodeVisitor::VisitExpression(Expression &ast_node) {
+    auto expr = ast_node.E->codegen(*this);
+    if (!expr) {
+        report_error_("illegal expression", ast_node.Line, ast_node.StartsAt,
+                      ast_node.EndsAt);
+        return nullptr;
+    }
+    return expr;
+}
+
+llvm::Value *CodeVisitor::VisitVariableStmt(VariableStmt &ast_node) {
+    llvm::Value *expr = nullptr;
+    if(ast_node.Decl)
+        expr = ast_node.Decl->codegen(*this);
+
+    NamedValues[ast_node.Name] = expr;
+    return expr;
+}
 
 void CodeVisitor::report_error_(std::string message, int line, size_t starts_at,
                                 size_t ends_at) {

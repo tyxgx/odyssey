@@ -16,5 +16,5 @@
 # true == true
 # true != true
 # false != true
-(543 + 29 * 54 * 89)
+let x = (542 * 29 * 54 * 89.0);
 # 1 + 1;

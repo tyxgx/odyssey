@@ -39,8 +39,8 @@ int main(int argc, const char **argv) {
         llvm::raw_string_ostream code_stream(code);
         /* std::error_code err_code; */
         /* llvm::raw_fd_ostream out_ll("./out.ll", err_code); */
-        for(auto &stmt: program) {
-            auto codegen = stmt->Expression->codegen(visitor);
+        for (auto &stmt : program) {
+            auto codegen = stmt->codegen(visitor);
             code_stream << *codegen;
             code_stream.flush();
         }
@@ -52,14 +52,15 @@ int main(int argc, const char **argv) {
             exit(1);
         }
 
-        auto fn_type = llvm::FunctionType::get(visitor.Builder->getInt32Ty(), false);
+        auto fn_type =
+            llvm::FunctionType::get(visitor.Builder->getInt32Ty(), false);
         auto fn = visitor.TheModule->getFunction("main");
 
         if (fn == nullptr) {
             // create the function
             fn =
                 llvm::Function::Create(fn_type, llvm::Function::ExternalLinkage,
-                        "main", *(visitor.TheModule));
+                                       "main", *(visitor.TheModule));
             verifyFunction(*fn);
         }
 
