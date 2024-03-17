@@ -6,14 +6,21 @@ project(
     odyssey
     VERSION 0.1.0
     DESCRIPTION "The Odyssey Programming Language"
-    HOMEPAGE_URL "https://example.com/"
-    LANGUAGES CXX
+    LANGUAGES CXX C
 )
 
 include(cmake/project-is-top-level.cmake)
 include(cmake/variables.cmake)
 
 # ---- Declare library ----
+
+find_package(LLVM REQUIRED CONFIG)
+
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
+include_directories(${LLVM_INCLUDE_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
 
 add_library(
     odyssey_lib OBJECT
@@ -37,7 +44,7 @@ set_property(TARGET odyssey_exe PROPERTY OUTPUT_NAME odyssey)
 
 target_compile_features(odyssey_exe PRIVATE cxx_std_17)
 
-target_link_libraries(odyssey_exe PRIVATE odyssey_lib)
+target_link_libraries(odyssey_exe PRIVATE odyssey_lib ${llvm_libs})
 
 # ---- Install rules ----
 
