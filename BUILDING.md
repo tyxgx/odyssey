@@ -1,5 +1,10 @@
 # Building with CMake
 
+## Dependencies
+The project depends on `LLVM`, and thus you must have `LLVM` installed on your system
+such that the build system can locate it.
+For building in Developer mode, `cppcheck` is required.
+
 ## Build
 
 This project doesn't require any special command-line flags to build to keep
@@ -12,21 +17,22 @@ generator, like the Unix Makefiles one:
 cmake -S . -B build -D CMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
-
-Here are the steps for building in release mode with a multi-configuration
-generator, like the Visual Studio ones:
+The CMake build systems supports Ninja as a back-end, and thus the recommended
+way to build is to use Ninja:
 
 ```sh
-cmake -S . -B build
-cmake --build build --config Release
+cmake -G Ninja -S . -B build
+cd build && ninja
 ```
 
-### Building with MSVC
+### Building on Windows
 
-Note that MSVC by default is not standards compliant and you need to pass some
-flags to make it behave properly. See the `flags-msvc` preset in the
-[CMakePresets.json](CMakePresets.json) file for the flags and with what
-variable to provide them to CMake during configuration.
+The tests are only run in Unix environments, and there is no ongoing plan for
+Windows support implementation. Thus, *the code might not behave as expected for
+some possible edge cases when run on Windows*.
+The CI does not run tests for Windows, thus there can be some unexpected behaviour.
+
+**Note**: You can expect the code to at least _build_ on Windows if you have LLVM headers installed.
 
 ### Building on Apple Silicon
 
@@ -47,13 +53,6 @@ single-configuration generator, like the Unix Makefiles one:
 
 ```sh
 cmake --install build
-```
-
-Here is the command for installing the release mode artifacts with a
-multi-configuration generator, like the Visual Studio ones:
-
-```sh
-cmake --install build --config Release
 ```
 
 [1]: https://cmake.org/download/
