@@ -1,6 +1,11 @@
-# odyssey
+# The Odyssey Programming Language
 
-This is the odyssey project.
+This is the repository where the source code for the Odyssey Programming Language
+lives. The code is undergoing a rewrite for greater adherence to modern C++
+practices, and hence the repository might appear to be very bare.
+To look at the old code, which might seem very C-like, you can navigate to
+the _main_ branch, which used to be the default branch till sometime ago.
+_main_ has now been replaced with _master_, which will hold all further developments.
 
 # Building and installing
 
