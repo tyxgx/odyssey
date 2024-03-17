@@ -30,7 +30,7 @@ cd build && ninja
 The tests are only run in Unix environments, and there is no ongoing plan for
 Windows support implementation. Thus, *the code might not behave as expected for
 some possible edge cases when run on Windows*.
-The CI does not run tests for Windows, thus there can be some unexpected behaviour.
+The CI does not run tests for Windows, thus there can be some unexpected behavior.
 
 **Note**: You can expect the code to at least _build_ on Windows if you have LLVM headers installed.
 
