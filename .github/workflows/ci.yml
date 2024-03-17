@@ -38,7 +38,7 @@ jobs:
     # edit the "<name>" placeholder to your GitHub name.
     # If you do not wish to use codecov, then simply delete this job from the
     # workflow.
-    if: github.repository_owner == '<name>'
+    if: github.repository_owner == 'vinayakdsci'
       && false
 
     steps:
@@ -98,7 +98,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-12, ubuntu-22.04, windows-2022]
+        os: [macos-12, ubuntu-22.04]
 
     runs-on: ${{ matrix.os }}
 
@@ -113,12 +113,6 @@ jobs:
         sudo update-alternatives --install
         /usr/bin/clang-tidy clang-tidy
         /usr/bin/clang-tidy-14 140
-
-    - name: Setup MultiToolTask
-      if: matrix.os == 'windows-2022'
-      run: |
-        Add-Content "$env:GITHUB_ENV" 'UseMultiToolTask=true'
-        Add-Content "$env:GITHUB_ENV" 'EnforceProcessCountAcrossBuilds=true'
 
     - name: Configure
       shell: pwsh
@@ -146,14 +140,11 @@ jobs:
     #    git commit --allow-empty -m "Initial commit"
     #    git push -u origin gh-pages
     #
-    # Edit the <name> placeholder below to your GitHub name, so this action
-    # runs only in your repository and no one else's fork. After these, delete
-    # this comment and the last line in the conditional below.
     # If you do not wish to use GitHub Pages for deploying documentation, then
     # simply delete this job similarly to the coverage one.
     if: github.ref == 'refs/heads/master'
       && github.event_name == 'push'
-      && github.repository_owner == '<name>'
+      && github.repository_owner == 'vinayakdsci'
       && false
 
     steps:
