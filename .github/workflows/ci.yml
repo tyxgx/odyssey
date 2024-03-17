@@ -29,43 +29,6 @@ jobs:
       if: always()
       run: cmake -P cmake/spell.cmake
 
-  coverage:
-    needs: [lint]
-
-    runs-on: ubuntu-22.04
-
-    # To enable coverage, delete the last line from the conditional below and
-    # edit the "<name>" placeholder to your GitHub name.
-    # If you do not wish to use codecov, then simply delete this job from the
-    # workflow.
-    if: github.repository_owner == 'vinayakdsci'
-      && false
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Install LCov
-      run: sudo apt-get update -q
-        && sudo apt-get install lcov -q -y
-
-    - name: Configure
-      run: cmake --preset=ci-coverage
-
-    - name: Build
-      run: cmake --build build/coverage -j 2
-
-    - name: Test
-      working-directory: build/coverage
-      run: ctest --output-on-failure --no-tests=error -j 2
-
-    - name: Process coverage info
-      run: cmake --build build/coverage -t coverage
-
-    - name: Submit to codecov.io
-      uses: codecov/codecov-action@v4
-      with:
-        file: build/coverage/coverage.info
-
   sanitize:
     needs: [lint]
 
@@ -98,7 +61,7 @@ jobs:
 
     strategy:
       matrix:
-        os: [macos-12, ubuntu-22.04]
+        os: [ubuntu-22.04]
 
     runs-on: ${{ matrix.os }}
 
@@ -108,7 +71,7 @@ jobs:
     - name: Install static analyzers
       if: matrix.os == 'ubuntu-22.04'
       run: >-
-        sudo apt-get install clang-tidy-14 cppcheck -y -q
+        sudo apt-get install llvm clang-tidy-14 cppcheck -y -q
 
         sudo update-alternatives --install
         /usr/bin/clang-tidy clang-tidy
