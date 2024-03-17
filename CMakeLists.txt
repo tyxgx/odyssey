@@ -24,20 +24,20 @@ add_definitions(${LLVM_DEFINITIONS})
 
 add_library(
     odyssey_lib OBJECT
-    source/lib.cpp
+    src/lib.cpp
 )
 
 target_include_directories(
     odyssey_lib ${warning_guard}
     PUBLIC
-    "\$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>"
+    "\$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>"
 )
 
 target_compile_features(odyssey_lib PUBLIC cxx_std_17)
 
 # ---- Declare executable ----
 
-add_executable(odyssey_exe source/main.cpp)
+add_executable(odyssey_exe src/main.cpp)
 add_executable(odyssey::exe ALIAS odyssey_exe)
 
 set_property(TARGET odyssey_exe PROPERTY OUTPUT_NAME odyssey)
