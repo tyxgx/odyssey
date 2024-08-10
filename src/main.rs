@@ -20,6 +20,6 @@ fn main() {
         }
     }
 
-   let token_list = lexer::Lexer::new("1 + 1").collect::<Vec<lexer::Token>>();
+   let token_list = lexer::Lexer::new("1 / str").collect::<Vec<lexer::Token>>();
    eprintln!{"{:?}", token_list}
 }
