@@ -10,7 +10,7 @@ pub enum Token {
     Boolean(bool),
 
     // Operators and symbols
-    Operator(String),
+    OperatorOrSym(String),
 
     // Keywords
     For,
@@ -37,6 +37,7 @@ pub enum Token {
 }
 
 pub struct Lexer<'a> {
+    per_line_pos: usize,
     pos: usize,
     input: &'a str,
     chars: Box<Peekable<Chars<'a>>>,
@@ -49,6 +50,7 @@ pub type LexResult = Result<Token, String>;
 impl<'a> Lexer<'a> {
     pub fn new(src: &'a str) -> Self {
         Lexer {
+            per_line_pos: 0,
             pos: 0,
             input: src,
             chars: Box::new(src.chars().peekable()),
@@ -62,11 +64,12 @@ impl<'a> Lexer<'a> {
         let chars = self.chars.deref_mut();
         let mut pos = self.pos;
         let src = self.input;
+        let mut plp = self.per_line_pos;
 
         // Skip ws
         loop {
-            // Call peek in its own scope, so that chars.next() after this does not displease the
-            // borrow checker
+            // Call peek in its own scope, so that chars.next() after
+            // this does not displease the borrow checker.
             {
                 let ch = chars.peek();
                 if ch.is_none() {
@@ -76,7 +79,7 @@ impl<'a> Lexer<'a> {
                 }
 
                 if *ch.unwrap() == '\n' {
-                    self.pos = 0;
+                    plp = 0;
                     self.line += 1;
                     break;
                 }
@@ -89,75 +92,79 @@ impl<'a> Lexer<'a> {
 
             chars.next();
             pos += 1;
+            plp += 1;
         }
 
         let start = pos;
 
         // advance
-        let next = match chars.next() {
+        let next = chars.next();
+        let nx = match next {
             None => return Ok(Token::EOF),
-            Some(_) => chars.next(),
+            Some(x) => x,
         };
 
         pos += 1;
+        plp += 1;
 
-        let _result: Result<Token, String> = match next.unwrap() {
-            '/' => Ok(Token::Operator('/'.to_string())),
-            '*' => Ok(Token::Operator('*'.to_string())),
-            '(' => Ok(Token::Operator('('.to_string())),
-            ']' => Ok(Token::Operator(']'.to_string())),
-            '[' => Ok(Token::Operator('['.to_string())),
-            '}' => Ok(Token::Operator('}'.to_string())),
-            '{' => Ok(Token::Operator('{'.to_string())),
-            ',' => Ok(Token::Operator(','.to_string())),
+        let result: Result<Token, String> = match nx {
+            '/' => Ok(Token::OperatorOrSym('/'.to_string())),
+            '*' => Ok(Token::OperatorOrSym('*'.to_string())),
+            '(' => Ok(Token::OperatorOrSym('('.to_string())),
+            ']' => Ok(Token::OperatorOrSym(']'.to_string())),
+            '[' => Ok(Token::OperatorOrSym('['.to_string())),
+            '}' => Ok(Token::OperatorOrSym('}'.to_string())),
+            '{' => Ok(Token::OperatorOrSym('{'.to_string())),
+            ',' => Ok(Token::OperatorOrSym(','.to_string())),
             '>' => {
                 if self.expect_next('=') {
-                    Ok(Token::Operator(">=".to_string()))
+                    Ok(Token::OperatorOrSym(">=".to_string()))
                 } else {
-                    Ok(Token::Operator('>'.to_string()))
+                    Ok(Token::OperatorOrSym('>'.to_string()))
                 }
             }
             '<' => {
                 if self.expect_next('=') {
-                    Ok(Token::Operator("<=".to_string()))
+                    Ok(Token::OperatorOrSym("<=".to_string()))
                 } else {
-                    Ok(Token::Operator('<'.to_string()))
+                    Ok(Token::OperatorOrSym('<'.to_string()))
                 }
             }
             '=' => {
                 if self.expect_next('=') {
-                    Ok(Token::Operator("==".to_string()))
+                    Ok(Token::OperatorOrSym("==".to_string()))
                 } else {
-                    Ok(Token::Operator('='.to_string()))
+                    Ok(Token::OperatorOrSym('='.to_string()))
                 }
             }
             '!' => {
                 if self.expect_next('=') {
-                    Ok(Token::Operator("!=".to_string()))
+                    Ok(Token::OperatorOrSym("!=".to_string()))
                 } else {
-                    Ok(Token::Operator('!'.to_string()))
+                    Ok(Token::OperatorOrSym('!'.to_string()))
                 }
             }
             '+' => {
                 if self.expect_next('=') {
-                    Ok(Token::Operator("+=".to_string()))
+                    Ok(Token::OperatorOrSym("+=".to_string()))
                 } else {
-                    Ok(Token::Operator('+'.to_string()))
+                    Ok(Token::OperatorOrSym('+'.to_string()))
                 }
             }
             '-' => {
                 if self.expect_next('=') {
-                    Ok(Token::Operator("-=".to_string()))
+                    Ok(Token::OperatorOrSym("-=".to_string()))
                 } else {
-                    Ok(Token::Operator('-'.to_string()))
+                    Ok(Token::OperatorOrSym('-'.to_string()))
                 }
             }
-            '%' => Ok(Token::Operator('%'.to_string())),
-            ';' => Ok(Token::Operator(';'.to_string())),
+            '%' => Ok(Token::OperatorOrSym('%'.to_string())),
+            ';' => Ok(Token::OperatorOrSym(';'.to_string())),
             '#' => {
                 loop {
                     let ch = chars.next();
                     pos += 1;
+                    plp += 1;
                     if ch.unwrap() == '\n' {
                         break;
                     }
@@ -166,13 +173,8 @@ impl<'a> Lexer<'a> {
             }
 
             '.' | '0'..='9' => {
-                loop {
-                    let ch = match chars.peek() {
-                        Some(x) => *x,
-                        None => return Ok(Token::EOF),
-                    };
-
-                    if ch != '.' && !ch.is_ascii_hexdigit() {
+                while let Some(ch) = chars.peek() {
+                    if *ch != '.' && !ch.is_ascii_hexdigit() {
                         break;
                     }
 
@@ -183,13 +185,8 @@ impl<'a> Lexer<'a> {
             }
 
             'a'..='z' | 'A'..='Z' => {
-                loop {
-                    let ch = match chars.peek() {
-                        Some(x) => *x,
-                        None => return Ok(Token::EOF),
-                    };
-
-                    if ch != '_' && !ch.is_alphanumeric() {
+                while let Some(ch) = chars.peek() {
+                    if *ch != '_' && !ch.is_alphanumeric() {
                         break;
                     }
 
@@ -212,20 +209,31 @@ impl<'a> Lexer<'a> {
                     ident => Ok(Token::Ident(ident.to_string())),
                 }
             }
-            _ => todo!(),
+            _ => Err("illegal token in input".to_string()),
         };
-
-        Err("SHIT HAPPENS".to_string())
+        self.pos = pos;
+        result
     }
 
     fn expect_next(&mut self, expected: char) -> bool {
-        let c = self.chars.deref_mut();
-        match c.peek() {
-            None => return false,
-            Some(x) => return *x == expected,
+        let match_occurred: bool;
+        {
+            let c = self.chars.deref_mut();
+            match_occurred = match c.peek() {
+                None => false,
+                Some(x) => *x == expected,
+            }
+        }
+
+        if match_occurred {
+            self.chars.next();
+            match_occurred
+        } else {
+            match_occurred
         }
     }
 }
+
 impl<'a> Iterator for Lexer<'a> {
     type Item = Token;
     fn next(&mut self) -> Option<<Self as Iterator>::Item> {
