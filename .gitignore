@@ -9,3 +9,8 @@ prefix/
 CMakeLists.txt.user
 CMakeUserPresets.json
 compile_commands.json
+
+
+# Added by cargo
+
+/target
